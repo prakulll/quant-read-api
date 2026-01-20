@@ -50,11 +50,11 @@ GET /api/v1/index/data
 
 **Raw (seconds)**
 
-```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
+## ```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
 **Resampled (1m, offset 30s)**
 
-```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
+## ```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 ### 2️⃣ Futures Data
 
@@ -74,11 +74,11 @@ GET /api/v1/futures/data
 
 **Raw**
 
-```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
+## ```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
 **Resampled**
 
-```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
+## ```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 ### 3️⃣ Options Contract Data
 
@@ -99,17 +99,17 @@ Query Parameters
 
 **Raw**
 
-```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T09:40:00"```
+## ```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T09:40:00"```
 
 **Resampled**
 
-```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
+## ```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 ## 📦 Response Format
 
 All APIs return:
 
-{
+## {
   "data": { ... },
   "meta": {
     "underlying": "NIFTY",
