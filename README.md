@@ -121,6 +121,7 @@ Query Parameters
 
 All APIs return:
 
+```json
  {
   "data": { ... },
   "meta": {
@@ -133,6 +134,7 @@ All APIs return:
     "last_ts": "2025-11-03T15:28:30+05:30"
   }
 }
+```
 
 Metadata is returned once per response (never per row).
 
