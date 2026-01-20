@@ -1,0 +1,25 @@
+# binaries
+quant-read-api
+bin/
+dist/
+
+# runtime data
+data/
+metadata/
+preprocessed_configs/
+store/
+uuid/
+
+# env
+.env
+.env.*
+
+# editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# logs
+*.log
