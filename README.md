@@ -49,6 +49,7 @@ GET /api/v1/index/data
 | offset     | ❌       | Offset seconds                      | 30      |
 
 **Raw (seconds)**
+
 ```bash
 curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"
 
