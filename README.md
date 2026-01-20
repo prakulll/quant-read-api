@@ -56,7 +56,7 @@ Resampled (1m, offset 30s)
 
 ```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
-2️⃣ Futures Data
+### 2️⃣ Futures Data
 
 **Endpoint**
 GET /api/v1/futures/data
@@ -80,7 +80,7 @@ Resampled
 
 ```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
-3️⃣ Options Contract Data
+### 3️⃣ Options Contract Data
 
 **Endpoint**
 GET /api/v1/options/contract
