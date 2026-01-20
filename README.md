@@ -24,7 +24,7 @@ This service provides **Index, Futures, and Options** market data with:
 
 All endpoints are **versioned** under:
 
-/api/v1
+`/api/v1`
 
 This version is **frozen** once released (no breaking changes).
 
@@ -36,7 +36,7 @@ This version is **frozen** once released (no breaking changes).
 
 **Endpoint**
 
-GET /api/v1/index/data
+`GET /api/v1/index/data`
 
 **Query Parameters**
 
@@ -63,7 +63,8 @@ GET /api/v1/index/data
 ### 2️⃣ Futures Data
 
 **Endpoint**
-GET /api/v1/futures/data
+
+`GET /api/v1/futures/data`
 
 **Query Parameters**
 
@@ -91,7 +92,8 @@ GET /api/v1/futures/data
 ### 3️⃣ Options Contract Data
 
 **Endpoint**
-GET /api/v1/options/contract
+
+`GET /api/v1/options/contract`
 
 Query Parameters
 | Name        | Required | Description           | Example             |
@@ -140,22 +142,27 @@ Metadata is returned once per response (never per row).
 
 ## 🧱 Project Structure
 
+```text
 components/   → DB query logic
 controllers/ → HTTP handlers
 models/      → Response & data models
 routes/      → Router setup
 services/    → ClickHouse, compression
+```
 
 ## 🏷 Versioning
-	•	v1 is stable
-	•	New versions will be released as /api/v2
-	•	No breaking changes inside a version
+
+- v1 is stable  
+- New versions will be released as `/api/v2`  
+- No breaking changes inside a version  
 
 ## 🧠 Philosophy
-	•	Columnar data > row-based for analytics
-	•	Metadata belongs to response, not rows
-	•	Offset-based candles are first-class
-	•	APIs should be deterministic & reproducible
+
+- Columnar data > row-based for analytics  
+- Metadata belongs to response, not rows  
+- Offset-based candles are first-class  
+- APIs should be deterministic & reproducible  
+
 ## 🧑‍💻 Author
 
-Prakul Jaiswal
+**Prakul Jaiswal**
