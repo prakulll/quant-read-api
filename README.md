@@ -52,7 +52,7 @@ GET /api/v1/index/data
 
 ```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
-Resampled (1m, offset 30s)
+**Resampled (1m, offset 30s)**
 
 ```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
@@ -72,11 +72,11 @@ GET /api/v1/futures/data
 | tf          | ❌       | Resample timeframe (1s,5s,1m)   | 1m                  |
 | offset      | ❌       | Offset seconds                  | 30                  |
 
-Raw
+**Raw**
 
 ```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
-Resampled
+**Resampled**
 
 ```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
@@ -97,15 +97,15 @@ Query Parameters
 | tf          | ❌       | Resample timeframe    | 1m                  |
 | offset      | ❌       | Offset seconds        | 30                  |
 
-Raw
+**Raw**
 
 ```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T09:40:00"```
 
-Resampled
+**Resampled**
 
 ```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
-📦 Response Format
+## 📦 Response Format
 
 All APIs return:
 
@@ -124,7 +124,7 @@ All APIs return:
 
 Metadata is returned once per response (never per row).
 
-🧱 Project Structure
+## 🧱 Project Structure
 
 components/   → DB query logic
 controllers/ → HTTP handlers
@@ -132,16 +132,16 @@ models/      → Response & data models
 routes/      → Router setup
 services/    → ClickHouse, compression
 
-🏷 Versioning
+## 🏷 Versioning
 	•	v1 is stable
 	•	New versions will be released as /api/v2
 	•	No breaking changes inside a version
 
-🧠 Philosophy
+## 🧠 Philosophy
 	•	Columnar data > row-based for analytics
 	•	Metadata belongs to response, not rows
 	•	Offset-based candles are first-class
 	•	APIs should be deterministic & reproducible
-🧑‍💻 Author
+## 🧑‍💻 Author
 
 Prakul Jaiswal
