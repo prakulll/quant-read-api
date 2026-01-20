@@ -50,105 +50,56 @@ GET /api/v1/index/data
 
 **Raw (seconds)**
 
-```bash
-curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"
+```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
 Resampled (1m, offset 30s)
 
-curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"
+```curl -s "http://localhost:8081/api/v1/index/data?underlying=NIFTY&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 2️⃣ Futures Data
 
-Endpoint
-
+**Endpoint**
 GET /api/v1/futures/data
 
-Query Parameters
+**Query Parameters**
 
-Name
-Required
-Description
-Example
-underlying
-✅
-Symbol
-NIFTY
-series
-✅
-Contract series (numeric)
-1
-from
-✅
-Start datetime (IST)
-2025-11-03T09:15:00
-to
-✅
-End datetime (IST)
-2025-11-03T15:30:00
-tf
-❌
-Resample timeframe
-1m
-offset
-❌
-Offset seconds
-30
+| Name        | Required | Description                     | Example             |
+|-------------|----------|---------------------------------|---------------------|
+| underlying  | ✅       | Symbol                          | NIFTY               |
+| series      | ✅       | Contract series (numeric)       | 1                   |
+| from        | ✅       | Start datetime (IST)            | 2025-11-03T09:15:00 |
+| to          | ✅       | End datetime (IST)              | 2025-11-03T15:30:00 |
+| tf          | ❌       | Resample timeframe (1s,5s,1m)   | 1m                  |
+| offset      | ❌       | Offset seconds                  | 30                  |
 
 Raw
-curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"
+```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T09:20:00"```
 
 Resampled
-curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"
+```curl -s "http://localhost:8081/api/v1/futures/data?underlying=NIFTY&series=1&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 3️⃣ Options Contract Data
 
-Endpoint
+**Endpoint**
 GET /api/v1/options/contract
 
 Query Parameters
-Name
-Required
-Description
-Example
-underlying
-✅
-Symbol
-NIFTY
-expiry
-✅
-Expiry date
-2025-11-18
-strike
-✅
-Strike price
-25000
-option_type
-✅
-CE / PE
-CE
-from
-✅
-Start datetime (IST)
-2025-11-03T09:15:00
-to
-✅
-End datetime (IST)
-2025-11-03T15:30:00
-tf
-❌
-Resample timeframe
-1m
-offset
-❌
-Offset seconds
-30
+| Name        | Required | Description           | Example             |
+|-------------|----------|-----------------------|---------------------|
+| underlying  | ✅       | Symbol                | NIFTY               |
+| expiry      | ✅       | Expiry date           | 2025-11-18          |
+| strike      | ✅       | Strike price          | 25000               |
+| option_type | ✅       | CE / PE               | CE                  |
+| from        | ✅       | Start datetime (IST)  | 2025-11-03T09:15:00 |
+| to          | ✅       | End datetime (IST)    | 2025-11-03T15:30:00 |
+| tf          | ❌       | Resample timeframe    | 1m                  |
+| offset      | ❌       | Offset seconds        | 30                  |
 
 Raw
-
-curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T09:40:00"
+```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T09:40:00"```
 
 Resampled
-curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"
+```curl -s "http://localhost:8081/api/v1/options/contract?underlying=NIFTY&expiry=2025-11-18&strike=25000&option_type=CE&from=2025-11-03T09:15:00&to=2025-11-03T15:30:00&tf=1m&offset=30"```
 
 📦 Response Format
 
