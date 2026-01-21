@@ -1,6 +1,7 @@
 package components
 
 import (
+	"sync"
 	"time"
 
 	"quant-read-api/models"
@@ -174,4 +175,57 @@ func GetFuturesData(
 	}
 
 	return out, nil
+}
+
+// ==================================================
+// V2: concurrent futures fetch (series fan-out)
+// ==================================================
+func GetFuturesDataConcurrent(
+	underlying string,
+	seriesList []string,
+	from time.Time,
+	to time.Time,
+	tfSeconds *int64,
+	offsetSeconds int64,
+) (map[string]any, error) {
+
+	results := make(map[string]any)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	var firstErr error
+
+	for _, s := range seriesList {
+		series := s
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			data, err := GetFuturesData(
+				underlying,
+				series,
+				from,
+				to,
+				tfSeconds,
+				offsetSeconds,
+			)
+			if err != nil {
+				firstErr = err
+				return
+			}
+
+			mu.Lock()
+			results[series] = data
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	return results, nil
 }
