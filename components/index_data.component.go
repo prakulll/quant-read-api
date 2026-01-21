@@ -1,6 +1,7 @@
 package components
 
 import (
+	"sync"
 	"time"
 
 	"quant-read-api/models"
@@ -178,4 +179,64 @@ func GetIndexData(
 	}
 
 	return out, nil
+}
+
+// ===============================
+// V2: Concurrent index fetch
+// Wrapper over existing GetIndexData
+// NO logic change, NO SQL change
+// ===============================
+
+func GetIndexDataConcurrent(
+	underlyings []string,
+	from time.Time,
+	to time.Time,
+	tfSeconds *int64,
+	offsetSeconds int64,
+) (map[string]interface{}, error) {
+
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		results  = make(map[string]interface{}, len(underlyings))
+		firstErr error
+	)
+
+	wg.Add(len(underlyings))
+
+	for _, u := range underlyings {
+		underlying := u
+
+		go func() {
+			defer wg.Done()
+
+			data, err := GetIndexData(
+				underlying,
+				from,
+				to,
+				tfSeconds,
+				offsetSeconds,
+			)
+			if err != nil {
+				mu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				mu.Unlock()
+				return
+			}
+
+			mu.Lock()
+			results[underlying] = data
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+
+	return results, nil
 }
