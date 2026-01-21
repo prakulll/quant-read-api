@@ -16,12 +16,13 @@ func GetOptionContract(
 	to time.Time,
 	tfSeconds *int64,
 	offsetSeconds int64,
-) (interface{}, error) {
+) (any, error) {
 
 	db := services.GetClickHouse()
+	loc, _ := time.LoadLocation("Asia/Kolkata")
 
 	// =========================
-	// RAW PATH (NO RESAMPLING)
+	// RAW PATH (MULTI-DAY SAFE)
 	// =========================
 	if tfSeconds == nil {
 		query := `
@@ -42,7 +43,8 @@ func GetOptionContract(
 			  AND expiry = toDate(?)
 			  AND strike = ?
 			  AND option_type = ?
-			  AND ts BETWEEN ? AND ?
+			  AND ts >= ?
+			  AND ts < ?
 			ORDER BY ts
 		`
 
@@ -60,7 +62,7 @@ func GetOptionContract(
 		}
 		defer rows.Close()
 
-		out := make([]models.OptionContractRow, 0)
+		out := []models.OptionContractRow{}
 
 		for rows.Next() {
 			var r models.OptionContractRow
@@ -85,84 +87,147 @@ func GetOptionContract(
 		return out, nil
 	}
 
-	// =========================================
-	// RESAMPLED PATH (MARKET SAFE, FULL CANDLES)
-	// =========================================
-	query := `
-	WITH
-		toDateTime(?) AS session_start,
-		toDateTime(?) AS session_end,
-		? AS tf_seconds,
-		? AS offset_seconds
-	SELECT
-		bucket_ts AS ts,
-		argMin(ltp, ts) AS open,
-		max(ltp)        AS high,
-		min(ltp)        AS low,
-		argMax(ltp, ts) AS close
-	FROM
-	(
+	// =====================================
+	// RESAMPLED PATH (MULTI-DAY, OFFSET OK)
+	// =====================================
+
+	type candle struct {
+		Ts    time.Time
+		Open  float64
+		High  float64
+		Low   float64
+		Close float64
+	}
+
+	all := []candle{}
+
+	day := time.Date(
+		from.In(loc).Year(),
+		from.In(loc).Month(),
+		from.In(loc).Day(),
+		0, 0, 0, 0, loc,
+	)
+
+	lastDay := time.Date(
+		to.In(loc).Year(),
+		to.In(loc).Month(),
+		to.In(loc).Day(),
+		0, 0, 0, 0, loc,
+	)
+
+	for !day.After(lastDay) {
+
+		sessionStart := time.Date(
+			day.Year(), day.Month(), day.Day(),
+			9, 15, 0, 0, loc,
+		)
+
+		sessionEnd := time.Date(
+			day.Year(), day.Month(), day.Day(),
+			15, 30, 0, 0, loc,
+		)
+
+		effectiveStart := sessionStart
+		if from.After(effectiveStart) {
+			effectiveStart = from
+		}
+
+		effectiveEnd := sessionEnd
+		if to.Before(effectiveEnd) {
+			effectiveEnd = to
+		}
+
+		if !effectiveStart.Before(effectiveEnd) {
+			day = day.AddDate(0, 0, 1)
+			continue
+		}
+
+		query := `
 		SELECT
-			ts,
-			ltp,
-			session_start
-			+ offset_seconds
-			+ intDiv(
-				toUnixTimestamp(ts)
-				- toUnixTimestamp(session_start)
-				- offset_seconds,
-				tf_seconds
-			) * tf_seconds AS bucket_ts
-		FROM options_moneyness
-		WHERE underlying = ?
-		  AND expiry = toDate(?)
-		  AND strike = ?
-		  AND option_type = ?
-		  AND ts >= session_start
-		  AND ts < session_end
-	)
-	WHERE bucket_ts + tf_seconds <= session_end
-	GROUP BY bucket_ts
-	ORDER BY bucket_ts
-	`
+			bucket_ts AS ts,
+			argMin(ltp, ts) AS open,
+			max(ltp)        AS high,
+			min(ltp)        AS low,
+			argMax(ltp, ts) AS close
+		FROM
+		(
+			SELECT
+				ts,
+				ltp,
+				(?)
+				+ ?
+				+ intDiv(
+					toUnixTimestamp(ts)
+					- toUnixTimestamp(?)
+					- ?,
+					?
+				) * ? AS bucket_ts
+			FROM options_moneyness
+			WHERE
+				underlying = ?
+				AND expiry = toDate(?)
+				AND strike = ?
+				AND option_type = ?
+				AND ts >= ?
+				AND ts < ?
+		)
+		WHERE
+			bucket_ts >= ? + ?
+			AND bucket_ts + ? <= ?
+		GROUP BY bucket_ts
+		ORDER BY bucket_ts
+		`
 
-	rows, err := db.Query(
-		query,
-		from,
-		to,
-		*tfSeconds,
-		offsetSeconds,
-		underlying,
-		expiry,
-		strike,
-		optionType,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := models.ColumnarOHLC{
-		Ts:    []time.Time{},
-		Open:  []float64{},
-		High:  []float64{},
-		Low:   []float64{},
-		Close: []float64{},
-	}
-
-	for rows.Next() {
-		var ts time.Time
-		var o, h, l, c float64
-
-		if err := rows.Scan(&ts, &o, &h, &l, &c); err != nil {
+		rows, err := db.Query(
+			query,
+			sessionStart,
+			offsetSeconds,
+			sessionStart,
+			offsetSeconds,
+			*tfSeconds,
+			*tfSeconds,
+			underlying,
+			expiry,
+			strike,
+			optionType,
+			effectiveStart,
+			effectiveEnd,
+			sessionStart,
+			*tfSeconds,
+			*tfSeconds,
+			effectiveEnd,
+		)
+		if err != nil {
 			return nil, err
 		}
 
-		out.Ts = append(out.Ts, ts)
-		out.Open = append(out.Open, o)
-		out.High = append(out.High, h)
-		out.Low = append(out.Low, l)
-		out.Close = append(out.Close, c)
+		for rows.Next() {
+			var c candle
+			if err := rows.Scan(&c.Ts, &c.Open, &c.High, &c.Low, &c.Close); err != nil {
+				rows.Close()
+				return nil, err
+			}
+			all = append(all, c)
+		}
+
+		rows.Close()
+		day = day.AddDate(0, 0, 1)
+	}
+
+	out := models.ColumnarOHLC{
+		Ts:    make([]time.Time, 0, len(all)),
+		Open:  make([]float64, 0, len(all)),
+		High:  make([]float64, 0, len(all)),
+		Low:   make([]float64, 0, len(all)),
+		Close: make([]float64, 0, len(all)),
+	}
+
+	for _, c := range all {
+		out.Ts = append(out.Ts, c.Ts)
+		out.Open = append(out.Open, c.Open)
+		out.High = append(out.High, c.High)
+		out.Low = append(out.Low, c.Low)
+		out.Close = append(out.Close, c.Close)
 	}
 
 	return out, nil
