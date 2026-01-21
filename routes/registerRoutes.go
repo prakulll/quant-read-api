@@ -60,5 +60,12 @@ func RegisterRoutes() []apiRoute {
 			Method:  "GET",
 			Handler: controllers.GetIndexDataV2,
 		},
+
+		{
+			Version: "v2",
+			Path:    "/futures/data",
+			Method:  "GET",
+			Handler: controllers.GetFuturesDataV2,
+		},
 	}
 }

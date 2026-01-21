@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"quant-read-api/components"
@@ -102,6 +103,87 @@ func GetFuturesData(w http.ResponseWriter, r *http.Request) {
 			Offset:     offsetSeconds,
 			FirstTs:    firstTs,
 			LastTs:     lastTs,
+		},
+	}
+
+	json.NewEncoder(w).Encode(resp)
+}
+
+// =========================
+// V2: concurrent futures
+// =========================
+func GetFuturesDataV2(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	loc, _ := time.LoadLocation("Asia/Kolkata")
+
+	q := r.URL.Query()
+
+	underlying := q.Get("underlying")
+	seriesRaw := q.Get("series")
+	fromStr := q.Get("from")
+	toStr := q.Get("to")
+	tfStr := q.Get("tf")
+	offsetStr := q.Get("offset")
+
+	if underlying == "" || seriesRaw == "" || fromStr == "" || toStr == "" {
+		http.Error(w, "missing query params", http.StatusBadRequest)
+		return
+	}
+
+	seriesList := strings.Split(seriesRaw, ",")
+
+	from, err := time.ParseInLocation("2006-01-02T15:04:05", fromStr, loc)
+	if err != nil {
+		http.Error(w, "invalid from time", http.StatusBadRequest)
+		return
+	}
+
+	to, err := time.ParseInLocation("2006-01-02T15:04:05", toStr, loc)
+	if err != nil {
+		http.Error(w, "invalid to time", http.StatusBadRequest)
+		return
+	}
+
+	var tfSeconds *int64
+	if tfStr != "" {
+		val, err := parseTF(tfStr)
+		if err != nil {
+			http.Error(w, "invalid tf", http.StatusBadRequest)
+			return
+		}
+		tfSeconds = &val
+	}
+
+	var offsetSeconds int64
+	if offsetStr != "" {
+		offsetSeconds, err = strconv.ParseInt(offsetStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid offset", http.StatusBadRequest)
+			return
+		}
+	}
+
+	dataMap, err := components.GetFuturesDataConcurrent(
+		underlying,
+		seriesList,
+		from,
+		to,
+		tfSeconds,
+		offsetSeconds,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := models.Response[map[string]any]{
+		Data: dataMap,
+		Meta: models.Meta{
+			Underlying: underlying,
+			From:       from.Format(time.RFC3339),
+			To:         to.Format(time.RFC3339),
+			Tf:         tfStr,
+			Offset:     offsetSeconds,
 		},
 	}
 
