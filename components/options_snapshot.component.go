@@ -1,6 +1,7 @@
 package components
 
 import (
+	"sync"
 	"time"
 
 	"quant-read-api/models"
@@ -115,4 +116,100 @@ func GetOptionSnapshots(
 	}
 
 	return out, nil
+}
+
+// ==================================================
+// V2 — Concurrent snapshot by expiry
+// ==================================================
+func GetOptionSnapshotsConcurrent(
+	underlying string,
+	optionType string,
+	moneyness string,
+	moneynessMode string,
+	moneynessLvl int,
+	expiryMode string,
+	from time.Time,
+	to time.Time,
+) (map[string]models.OptionSnapshotColumnar, []string, error) {
+
+	expiries, err := GetOptionExpiries(underlying, &from, &to)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(expiries) == 0 {
+		return map[string]models.OptionSnapshotColumnar{}, expiries, nil
+	}
+
+	if expiryMode == "nearest" && len(expiries) > 1 {
+		expiries = expiries[:1]
+	}
+
+	// HARD CAP — mandatory for scale
+	const MAX_EXPIRIES = 6
+	if len(expiries) > MAX_EXPIRIES {
+		expiries = expiries[:MAX_EXPIRIES]
+	}
+
+	out := make(map[string]models.OptionSnapshotColumnar)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for _, exp := range expiries {
+		expiry := exp
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			rows, err := GetOptionSnapshots(
+				underlying,
+				optionType,
+				moneyness,
+				moneynessMode,
+				moneynessLvl,
+				expiry, // ← NOW CORRECT
+				from,
+				to,
+			)
+			if err != nil {
+				return
+			}
+
+			snap := models.OptionSnapshotColumnar{
+				Ts:           make([]time.Time, 0, len(rows)),
+				Underlying:   make([]string, 0, len(rows)),
+				Expiry:       make([]time.Time, 0, len(rows)),
+				Strike:       make([]uint32, 0, len(rows)),
+				OptionType:   make([]string, 0, len(rows)),
+				Ltp:          make([]float64, 0, len(rows)),
+				SpotPrice:    make([]float64, 0, len(rows)),
+				AtmStrike:    make([]uint32, 0, len(rows)),
+				Moneyness:    make([]string, 0, len(rows)),
+				MoneynessLvl: make([]int16, 0, len(rows)),
+				DaysToExpiry: make([]int16, 0, len(rows)),
+			}
+
+			for _, r := range rows {
+				snap.Ts = append(snap.Ts, r.Ts)
+				snap.Underlying = append(snap.Underlying, r.Underlying)
+				snap.Expiry = append(snap.Expiry, r.Expiry)
+				snap.Strike = append(snap.Strike, r.Strike)
+				snap.OptionType = append(snap.OptionType, r.OptionType)
+				snap.Ltp = append(snap.Ltp, r.Ltp)
+				snap.SpotPrice = append(snap.SpotPrice, r.SpotPrice)
+				snap.AtmStrike = append(snap.AtmStrike, r.AtmStrike)
+				snap.Moneyness = append(snap.Moneyness, r.Moneyness)
+				snap.MoneynessLvl = append(snap.MoneynessLvl, r.MoneynessLvl)
+				snap.DaysToExpiry = append(snap.DaysToExpiry, r.DaysToExpiry)
+			}
+
+			mu.Lock()
+			out[expiry] = snap
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+	return out, expiries, nil
 }

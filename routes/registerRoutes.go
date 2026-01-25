@@ -67,5 +67,12 @@ func RegisterRoutes() []apiRoute {
 			Method:  "GET",
 			Handler: controllers.GetFuturesDataV2,
 		},
+
+		{
+			Version: "v2",
+			Path:    "/options/snapshot",
+			Method:  "GET",
+			Handler: controllers.GetOptionSnapshotsV2,
+		},
 	}
 }
