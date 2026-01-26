@@ -4,47 +4,28 @@ import (
 	"encoding/json"
 	"net/http"
 	"quant-read-api/components"
-	"quant-read-api/models"
 	"strconv"
+	"strings"
 	"time"
 )
 
 var ist, _ = time.LoadLocation("Asia/Kolkata")
 
-func forceUTC(data interface{}) {
-	switch v := data.(type) {
+// unified datetime parser for entire API
+func parseAPITime(ts string) (time.Time, error) {
+	ts = strings.ReplaceAll(ts, " ", "+")
 
-	case []models.OptionSnapshot:
-		for i := range v {
-			v[i].Ts = v[i].Ts.UTC()
-			v[i].Expiry = v[i].Expiry.UTC()
-		}
-
-	case *[]models.OptionSnapshot:
-		for i := range *v {
-			(*v)[i].Ts = (*v)[i].Ts.UTC()
-			(*v)[i].Expiry = (*v)[i].Expiry.UTC()
-		}
-
-	case map[string]interface{}:
-		for _, val := range v {
-			switch arr := val.(type) {
-			case []models.OptionSnapshot:
-				for i := range arr {
-					arr[i].Ts = arr[i].Ts.UTC()
-					arr[i].Expiry = arr[i].Expiry.UTC()
-				}
-			case *[]models.OptionSnapshot:
-				for i := range *arr {
-					(*arr)[i].Ts = (*arr)[i].Ts.UTC()
-					(*arr)[i].Expiry = (*arr)[i].Expiry.UTC()
-				}
-			}
-		}
+	// RFC3339 with timezone
+	if t, err := time.Parse(time.RFC3339, ts); err == nil {
+		return t, nil
 	}
+
+	// fallback: assume IST
+	return time.ParseInLocation("2006-01-02T15:04:05", ts, ist)
 }
 
 func GetOptionContractsByPremium(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	q := r.URL.Query()
 
@@ -79,17 +60,17 @@ func GetOptionContractsByPremium(w http.ResponseWriter, r *http.Request) {
 	toStr := q.Get("to")
 
 	if fromStr == "" || toStr == "" {
-		http.Error(w, "from and to timestamps are required (RFC3339)", http.StatusBadRequest)
+		http.Error(w, "from and to timestamps are required", http.StatusBadRequest)
 		return
 	}
 
-	from, err := time.Parse(time.RFC3339, fromStr)
+	from, err := parseAPITime(fromStr)
 	if err != nil {
 		http.Error(w, "invalid from timestamp", http.StatusBadRequest)
 		return
 	}
 
-	to, err := time.Parse(time.RFC3339, toStr)
+	to, err := parseAPITime(toStr)
 	if err != nil {
 		http.Error(w, "invalid to timestamp", http.StatusBadRequest)
 		return
@@ -154,8 +135,5 @@ func GetOptionContractsByPremium(w http.ResponseWriter, r *http.Request) {
 		response = candidates
 	}
 
-	forceUTC(response)
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
