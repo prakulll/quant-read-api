@@ -74,5 +74,12 @@ func RegisterRoutes() []apiRoute {
 			Method:  "GET",
 			Handler: controllers.GetOptionSnapshotsV2,
 		},
+
+		{
+			Version: "v2",
+			Path:    "/options/contracts/by-premium",
+			Method:  "GET",
+			Handler: controllers.GetOptionContractsByPremiumV2,
+		},
 	}
 }
